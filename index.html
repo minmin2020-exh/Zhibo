@@ -12,12 +12,9 @@ body{
 }
 .container{max-width:700px;margin:0 auto}
 
-.logo{
-    text-align:center;font-size:26px;margin:50px 0 20px;
-    font-weight:bold;
-}
+/* 搜索栏 */
 .search{
-    display:flex;gap:10px;margin-bottom:26px;
+    display:flex;gap:10px;margin-bottom:24px;
 }
 .search input{
     flex:1;height:50px;padding:0 18px;border-radius:25px;
@@ -28,94 +25,178 @@ body{
     background:#e63946;color:#fff;border:none;font-size:18px;
 }
 
+/* 影片卡片 */
 .item{
     background:#1a1a1a;border-radius:16px;padding:14px;
     display:flex;gap:12px;margin-bottom:10px;
 }
 .cover{
-    width:80px;height:120px;border-radius:10px;object-fit:cover;
+    width:90px;height:130px;border-radius:10px;object-fit:cover;
 }
 .info{flex:1}
-.title{font-size:16px;font-weight:bold;margin-bottom:6px}
+.title{font-size:17px;font-weight:bold;margin-bottom:6px}
 .meta{color:#999;font-size:13px;margin-bottom:6px}
-.play{
+.play-btn{
     padding:8px 14px;background:#e63946;color:#fff;
-    border:none;border-radius:10px;margin-top:6px;font-size:14px;
+    border:none;border-radius:10px;margin-top:6px;
 }
 
-.foot{
-    text-align:center;color:#666;font-size:12px;margin-top:40px;
+/* 播放页面（内嵌不跳转）*/
+.play-layer{
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:#111;z-index:999;padding:20px;
+    display:none;overflow-y:auto;
+}
+.play-layer.show{display:block}
+
+.player-box{
+    width:100%;height:220px;background:#000;border-radius:12px;overflow:hidden;margin-bottom:16px;
+}
+.player-box iframe{
+    width:100%;height:100%;border:none;
+}
+
+/* 选集 */
+.episode-box{margin-bottom:16px}
+.ep-title{font-size:16px;margin-bottom:10px}
+.eps{
+    display:grid;grid-template-columns:repeat(8,1fr);gap:8px;
+}
+.eps button{
+    padding:8px 0;background:#222;color:#fff;border:none;border-radius:8px;
+}
+.eps button.active{background:#e63946}
+
+/* 播放源 */
+.source-box{margin-bottom:16px}
+.source-title{font-size:16px;margin-bottom:10px}
+.sources{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+}
+.sources button{
+    padding:10px;background:#222;color:#fff;border:none;border-radius:8px;
+}
+.sources button.active{background:#e63946}
+
+.back-btn{
+    width:100%;padding:12px;background:#333;color:#fff;
+    border:none;border-radius:12px;margin-top:10px;
 }
 </style>
 </head>
 
 <body>
+
 <div class="container">
-    <div class="logo">茶杯狐同款影视搜索</div>
     <div class="search">
-        <input id="kw" placeholder="输入电影/剧集名称">
+        <input id="kw" placeholder="输入电影/剧集/动漫">
         <button onclick="search()">→</button>
     </div>
-
     <div id="result"></div>
+</div>
 
-    <div class="foot">支持强制更新 · 多线路播放源</div>
+<!-- 内嵌播放页（不跳转） -->
+<div class="play-layer" id="playLayer">
+    <div class="player-box">
+        <iframe id="player" src=""></iframe>
+    </div>
+
+    <div class="episode-box">
+        <div class="ep-title">选集</div>
+        <div class="eps" id="eps"></div>
+    </div>
+
+    <div class="source-box">
+        <div class="source-title">播放源</div>
+        <div class="sources" id="sources"></div>
+    </div>
+
+    <button class="back-btn" onclick="closePlayer()">返回搜索</button>
 </div>
 
 <script>
 // ==============================================
-// 🔥 强制更新开关：改这个数字就全网强制刷新
+// 🔥 强制更新：改版本号即全网强制刷新
 // ==============================================
-const VERSION = "2026041303";
-const STORAGE_KEY = "movie_sites";
-const VERSION_KEY = "movie_version";
+const VERSION = "2026041305";
+const SITES_KEY = "real_sites_data";
+const VER_KEY = "real_sites_ver";
 
-// 云端播放源（你在这里更新）
-const CLOUD_SITES = [
-  { name:"茶杯狐",    url:"https://cupfox.app/search/" },
-  { name:"厂长资源",  url:"https://www.czzy.live/search.html?keyword=" },
-  { name:"LIBVIO",    url:"https://www.libvio.vip/search/" },
-  { name:"555电影",   url:"https://www.555film.cc/search.html?wd=" },
-  { name:"云盘影视",  url:"https://www.aliyundrive.cc/search?keyword=" },
+const CLOUD_SOURCES = [
+    { name:"茶杯狐", url:"https://cupfox.app/search/" },
+    { name:"厂长资源", url:"https://www.czzy.live/search.html?keyword=" },
+    { name:"LIBVIO", url:"https://www.libvio.vip/search/" },
+    { name:"555电影", url:"https://www.555film.cc/search.html?wd=" },
+    { name:"云盘影视", url:"https://www.aliyundrive.cc/search?keyword=" },
 ];
 
 // 强制更新逻辑
-function getSites() {
-  const localV = localStorage.getItem(VERSION_KEY);
-  if (localV !== VERSION) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(CLOUD_SITES));
-    localStorage.setItem(VERSION_KEY, VERSION);
-    console.log("✅ 已强制更新至最新站点");
-  }
-  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || CLOUD_SITES;
+function getSources() {
+    const localVer = localStorage.getItem(VER_KEY);
+    if (localVer !== VERSION) {
+        localStorage.setItem(SITES_KEY, JSON.stringify(CLOUD_SOURCES));
+        localStorage.setItem(VER_KEY, VERSION);
+    }
+    return JSON.parse(localStorage.getItem(SITES_KEY)) || CLOUD_SOURCES;
 }
+const sources = getSources();
 
-const sites = getSites();
-
-// 搜索
+// 搜索影片
 function search() {
-  const kw = document.getElementById("kw").value.trim();
-  if (!kw) return alert("请输入影片名称");
+    const kw = document.getElementById('kw').value.trim();
+    if (!kw) return alert('请输入影片名称');
 
-  let html = "";
-  sites.forEach(s => {
-    const link = s.url + encodeURIComponent(kw);
-    html += `
+    document.getElementById('result').innerHTML = `
     <div class="item">
-      <img class="cover" src="https://picsum.photos/seed/${kw}/300/450">
-      <div class="info">
-        <div class="title">${kw}</div>
-        <div class="meta">${s.name} 高清在线</div>
-        <button class="play" onclick="window.open('${link}')">立即播放</button>
-      </div>
+        <img class="cover" src="https://picsum.photos/seed/${kw}/300/450">
+        <div class="info">
+            <div class="title">${kw}</div>
+            <div class="meta">2026 / 全36集 / 豆瓣9.2</div>
+            <button class="play-btn" onclick="openPlayer('${kw}')">立即播放</button>
+        </div>
     </div>`;
-  });
-
-  document.getElementById("result").innerHTML = html;
 }
 
-document.getElementById("kw").addEventListener("keydown", e => {
-  if (e.key === "Enter") search();
+// 打开内嵌播放器（不跳转）
+let currentKw = "";
+function openPlayer(kw) {
+    currentKw = kw;
+    document.getElementById('playLayer').classList.add('show');
+    buildEpisodes();
+    buildSources();
+    switchSource(0);
+}
+function closePlayer() {
+    document.getElementById('playLayer').classList.remove('show');
+}
+
+// 选集 1~36
+function buildEpisodes() {
+    let html = "";
+    for (let i=1; i<=36; i++) {
+        html += `<button onclick="playEpisode(${i})">${i}</button>`;
+    }
+    document.getElementById('eps').innerHTML = html;
+}
+function playEpisode(ep) {
+    alert(`正在播放第${ep}集`);
+}
+
+// 切换播放源（内嵌不跳转）
+function buildSources() {
+    let html = "";
+    sources.forEach((s, i) => {
+        html += `<button onclick="switchSource(${i})">${s.name}</button>`;
+    });
+    document.getElementById('sources').innerHTML = html;
+}
+function switchSource(index) {
+    const url = sources[index].url + encodeURIComponent(currentKw);
+    document.getElementById('player').src = url;
+}
+
+document.getElementById('kw').addEventListener('keydown', e => {
+    if (e.key === 'Enter') search();
 });
 </script>
 </body>
