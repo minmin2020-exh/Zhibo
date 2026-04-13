@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>全网影视搜索 - 茶杯狐电影狗同款</title>
+<title>全网影视搜索 - 强制更新版</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{
@@ -32,8 +32,6 @@ body{
     border:none;border-radius:14px;font-size:16px;font-weight:600;
     cursor:pointer;
 }
-
-/* 结果卡片 */
 .result{
     background:#1c1c1e;border-radius:12px;padding:16px;margin-bottom:10px;
 }
@@ -44,7 +42,6 @@ body{
 .result small{
     color:#888;font-size:13px;
 }
-
 .loading{
     text-align:center;color:#aaa;padding:40px 0;font-size:15px;
 }
@@ -53,26 +50,29 @@ body{
 }
 </style>
 </head>
-
 <body>
 
 <div class="container">
     <div class="logo">影视搜索</div>
-    <div class="desc">茶杯狐 / 电影狗同款聚合搜索</div>
-
+    <div class="desc">电影狗 / 茶杯狐 聚合搜索</div>
     <div class="search-row">
-        <input type="text" id="kw" class="search-input" placeholder="输入电影、剧集、动漫名称">
+        <input type="text" id="kw" class="search-input" placeholder="输入电影、剧集、动漫">
         <button class="search-btn" onclick="search()">搜索</button>
     </div>
-
     <div id="result-box"></div>
-
-    <div class="foot">本页面仅做搜索跳转，不存储任何视频</div>
+    <div class="foot">仅搜索跳转 | 无存储 | 支持强制云端更新</div>
 </div>
 
 <script>
-// 全网优质影视站（真实可搜索）
-const sites = [
+// ==============================================
+// 🔥 云端强制更新：改这里数字即可全网强制刷新
+// ==============================================
+const VERSION = "2026041301";  // 每次改版本号就强制更新
+const STORAGE_KEY = "movie_search_sites";
+const VERSION_KEY = "movie_search_version";
+
+// 你的影视站列表（云端核心数据）
+const CLOUD_SITES = [
   { name: "茶杯狐", url: "https://cupfox.app", path: "/search/" },
   { name: "厂长资源", url: "https://www.czzy.live", path: "/search.html?keyword=" },
   { name: "比特大雄", url: "https://www.btdx8.vip", path: "/search/" },
@@ -90,34 +90,42 @@ const sites = [
   { name: "橙子影视", url: "https://www.czyys.com", path: "/search/" }
 ];
 
-// 搜索
-function search() {
-  const kw = document.getElementById('kw').value.trim();
-  if (!kw) return alert('请输入要搜索的影视名称');
-
-  const box = document.getElementById('result-box');
-  box.innerHTML = '<div class="loading">正在搜索全网资源，请稍候...</div>';
-
-  setTimeout(() => {
-    let html = '';
-    sites.forEach(site => {
-      const link = site.url + site.path + encodeURIComponent(kw);
-      html += `
-      <div class="result">
-        <a href="${link}" target="_blank">${kw} — ${site.name}</a>
-        <small>来源：${site.url}</small>
-      </div>
-      `;
-    });
-    box.innerHTML = html;
-  }, 600);
+// 强制更新逻辑
+function loadSites() {
+  const localVer = localStorage.getItem(VERSION_KEY);
+  if (localVer !== VERSION) {
+    // 版本不一致 → 强制覆盖云端数据
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(CLOUD_SITES));
+    localStorage.setItem(VERSION_KEY, VERSION);
+    console.log("✅ 云端强制更新成功");
+  }
+  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || CLOUD_SITES;
 }
 
-// 回车搜索
+// 搜索
+const sites = loadSites();
+function search() {
+  const kw = document.getElementById('kw').value.trim();
+  if (!kw) return alert('请输入影视名称');
+  const box = document.getElementById('result-box');
+  box.innerHTML = '<div class="loading">正在全网搜索资源...</div>';
+  setTimeout(() => {
+    let html = "";
+    sites.forEach(s => {
+      const u = s.url + s.path + encodeURIComponent(kw);
+      html += `
+      <div class="result">
+        <a href="${u}" target="_blank">${kw} — ${s.name}</a>
+        <small>${s.url}</small>
+      </div>`;
+    });
+    box.innerHTML = html;
+  }, 500);
+}
+
 document.getElementById('kw').addEventListener('keydown', e => {
   if (e.key === 'Enter') search();
 });
 </script>
-
 </body>
 </html>
