@@ -1,203 +1,985 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>茶杯狐同款影视搜索</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{
-    background:#111;color:#fff;font-family:system-ui;
-    padding:20px 15px 60px;
-}
-.container{max-width:700px;margin:0 auto}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>知网豆包图片视频解析</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="http://doubao.xyyh.xyz/icons/icon16.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="http://doubao.xyyh.xyz/icons/icon48.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="http://doubao.xyyh.xyz/icons/icon128.png">
+    <script src="yibazhan/js/vue.global.prod.js"></script>
+    <script src="yibazhan/js/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-/* 搜索栏 */
-.search{
-    display:flex;gap:10px;margin-bottom:24px;
-}
-.search input{
-    flex:1;height:50px;padding:0 18px;border-radius:25px;
-    background:#1c1c1e;color:#fff;border:none;outline:none;font-size:16px;
-}
-.search button{
-    width:60px;height:50px;border-radius:25px;
-    background:#e63946;color:#fff;border:none;font-size:18px;
-}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #1f1f1f;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
 
-/* 影片卡片 */
-.item{
-    background:#1a1a1a;border-radius:16px;padding:14px;
-    display:flex;gap:12px;margin-bottom:10px;
-}
-.cover{
-    width:90px;height:130px;border-radius:10px;object-fit:cover;
-}
-.info{flex:1}
-.title{font-size:17px;font-weight:bold;margin-bottom:6px}
-.meta{color:#999;font-size:13px;margin-bottom:6px}
-.play-btn{
-    padding:8px 14px;background:#e63946;color:#fff;
-    border:none;border-radius:10px;margin-top:6px;
-}
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
 
-/* 播放页面（内嵌不跳转）*/
-.play-layer{
-    position:fixed;top:0;left:0;right:0;bottom:0;
-    background:#111;z-index:999;padding:20px;
-    display:none;overflow-y:auto;
-}
-.play-layer.show{display:block}
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
 
-.player-box{
-    width:100%;height:220px;background:#000;border-radius:12px;overflow:hidden;margin-bottom:16px;
-}
-.player-box iframe{
-    width:100%;height:100%;border:none;
-}
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease;
+        }
 
-/* 选集 */
-.episode-box{margin-bottom:16px}
-.ep-title{font-size:16px;margin-bottom:10px}
-.eps{
-    display:grid;grid-template-columns:repeat(8,1fr);gap:8px;
-}
-.eps button{
-    padding:8px 0;background:#222;color:#fff;border:none;border-radius:8px;
-}
-.eps button.active{background:#e63946}
+        .header-top {
+            margin-bottom: 16px;
+        }
 
-/* 播放源 */
-.source-box{margin-bottom:16px}
-.source-title{font-size:16px;margin-bottom:10px}
-.sources{
-    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
-}
-.sources button{
-    padding:10px;background:#222;color:#fff;border:none;border-radius:8px;
-}
-.sources button.active{background:#e63946}
+        .header h1 {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+        }
 
-.back-btn{
-    width:100%;padding:12px;background:#333;color:#fff;
-    border:none;border-radius:12px;margin-top:10px;
-}
-</style>
+        .header p {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 400;
+        }
+
+        .image-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 50px;
+            font-size: 14px;
+            color: #ffffff;
+            font-weight: 500;
+            margin-top: 16px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .image-count span {
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .input-section {
+            margin-bottom: 32px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            background: #f5f5f5;
+            padding: 6px;
+            border-radius: 12px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #666;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 16px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 15px;
+            background: #ffffff;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: #a0a0a0;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            background: #e0e0e0;
+            color: #a0a0a0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            animation: shake 0.5s ease;
+        }
+
+        .alert-error {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            color: #c53030;
+            border-left: 4px solid #fc8181;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 0;
+        }
+
+        .spinner {
+            border: 3px solid #f0f0f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .loading p {
+            color: #666;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
+        }
+
+        .image-card {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .image-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .image-card:hover .image-info {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .image-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .image-info {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            font-size: 12px;
+            color: #ffffff;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .image-actions {
+            display: flex;
+            gap: 8px;
+            padding: 16px;
+            background: #ffffff;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .action-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .action-btn.success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            border-color: #48bb78;
+            color: #ffffff;
+        }
+
+        .video-card {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .video-card video {
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+            object-fit: contain;
+            background: #000000;
+            display: block;
+        }
+
+        .video-info {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            font-size: 12px;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .video-actions {
+            display: flex;
+            gap: 8px;
+            padding: 16px;
+            background: #ffffff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            stroke: #cbd5e0;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4a5568;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+            color: #a0aec0;
+        }
+
+        .footer {
+            margin-top: auto;
+            padding: 40px 0 20px;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .footer-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .footer-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        .footer-link svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .footer-divider {
+            width: 1px;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .footer-text {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @media (max-width: 768px) {
+            #app {
+                padding: 24px 16px;
+            }
+
+            .header {
+                margin-bottom: 24px;
+            }
+
+            .header h1 {
+                font-size: 36px;
+            }
+
+            .header p {
+                font-size: 14px;
+            }
+
+            .main-card {
+                padding: 20px;
+                border-radius: 20px;
+            }
+
+            .tab-buttons {
+                gap: 8px;
+            }
+
+            .tab-btn {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+
+            .input-group {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .btn {
+                width: 100%;
+                padding: 14px 24px;
+            }
+
+            .images-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 16px;
+            }
+
+            .image-card img {
+                height: 200px;
+            }
+
+            .image-actions,
+            .video-actions {
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 12px;
+            }
+
+            .action-btn {
+                flex: 1 1 calc(50% - 4px);
+                font-size: 13px;
+                padding: 8px 12px;
+            }
+
+            .image-info,
+            .video-info {
+                opacity: 1;
+                transform: translateY(0);
+                font-size: 11px;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .footer-divider {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .main-card {
+                padding: 16px;
+            }
+
+            .images-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+
+            .image-card img {
+                height: 160px;
+            }
+
+            .image-card {
+                border-radius: 12px;
+            }
+
+            .action-btn {
+                flex: 1 1 100%;
+            }
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .tab-btn,
+            .btn,
+            .action-btn {
+                min-height: 44px;
+            }
+
+            .input-field {
+                min-height: 44px;
+            }
+
+            .image-info,
+            .video-info {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
-
 <body>
-
-<div class="container">
-    <div class="search">
-        <input id="kw" placeholder="输入电影/剧集/动漫">
-        <button onclick="search()">→</button>
-    </div>
-    <div id="result"></div>
-</div>
-
-<!-- 内嵌播放页（不跳转） -->
-<div class="play-layer" id="playLayer">
-    <div class="player-box">
-        <iframe id="player" src=""></iframe>
-    </div>
-
-    <div class="episode-box">
-        <div class="ep-title">选集</div>
-        <div class="eps" id="eps"></div>
-    </div>
-
-    <div class="source-box">
-        <div class="source-title">播放源</div>
-        <div class="sources" id="sources"></div>
-    </div>
-
-    <button class="back-btn" onclick="closePlayer()">返回搜索</button>
-</div>
-
-<script>
-// ==============================================
-// 🔥 强制更新：改版本号即全网强制刷新
-// ==============================================
-const VERSION = "2026041305";
-const SITES_KEY = "real_sites_data";
-const VER_KEY = "real_sites_ver";
-
-const CLOUD_SOURCES = [
-    { name:"茶杯狐", url:"https://cupfox.app/search/" },
-    { name:"厂长资源", url:"https://www.czzy.live/search.html?keyword=" },
-    { name:"LIBVIO", url:"https://www.libvio.vip/search/" },
-    { name:"555电影", url:"https://www.555film.cc/search.html?wd=" },
-    { name:"云盘影视", url:"https://www.aliyundrive.cc/search?keyword=" },
-];
-
-// 强制更新逻辑
-function getSources() {
-    const localVer = localStorage.getItem(VER_KEY);
-    if (localVer !== VERSION) {
-        localStorage.setItem(SITES_KEY, JSON.stringify(CLOUD_SOURCES));
-        localStorage.setItem(VER_KEY, VERSION);
-    }
-    return JSON.parse(localStorage.getItem(SITES_KEY)) || CLOUD_SOURCES;
-}
-const sources = getSources();
-
-// 搜索影片
-function search() {
-    const kw = document.getElementById('kw').value.trim();
-    if (!kw) return alert('请输入影片名称');
-
-    document.getElementById('result').innerHTML = `
-    <div class="item">
-        <img class="cover" src="https://picsum.photos/seed/${kw}/300/450">
-        <div class="info">
-            <div class="title">${kw}</div>
-            <div class="meta">2026 / 全36集 / 豆瓣9.2</div>
-            <button class="play-btn" onclick="openPlayer('${kw}')">立即播放</button>
+    <div id="app">
+        <div class="header">
+            <div class="header-top">
+                <h1>✨ 知网豆包图片视频解析</h1>
+                <p>一键提取豆包对话中的高清图片和视频，无水印、无压缩</p>
+                <div v-if="currentTab === 'image' && images.length > 0" class="image-count">
+                    🎉 已提取 <span>{{ images.length }}</span> 张图片
+                </div>
+                <div v-if="currentTab === 'video' && video" class="image-count">
+                    🎬 已提取 <span>1</span> 个视频
+                </div>
+            </div>
         </div>
-    </div>`;
-}
 
-// 打开内嵌播放器（不跳转）
-let currentKw = "";
-function openPlayer(kw) {
-    currentKw = kw;
-    document.getElementById('playLayer').classList.add('show');
-    buildEpisodes();
-    buildSources();
-    switchSource(0);
-}
-function closePlayer() {
-    document.getElementById('playLayer').classList.remove('show');
-}
+        <div class="main-card">
+            <div class="input-section">
+                <div class="tab-buttons">
+                    <button 
+                        class="tab-btn" 
+                        :class="{ active: currentTab === 'image' }"
+                        @click="switchTab('image')"
+                    >
+                        🖼️ 图片解析
+                    </button>
+                    <button 
+                        class="tab-btn" 
+                        :class="{ active: currentTab === 'video' }"
+                        @click="switchTab('video')"
+                    >
+                        🎥 视频解析
+                    </button>
+                </div>
 
-// 选集 1~36
-function buildEpisodes() {
-    let html = "";
-    for (let i=1; i<=36; i++) {
-        html += `<button onclick="playEpisode(${i})">${i}</button>`;
-    }
-    document.getElementById('eps').innerHTML = html;
-}
-function playEpisode(ep) {
-    alert(`正在播放第${ep}集`);
-}
+                <div v-if="error" class="alert alert-error">
+                    ⚠️ {{ error }}
+                </div>
 
-// 切换播放源（内嵌不跳转）
-function buildSources() {
-    let html = "";
-    sources.forEach((s, i) => {
-        html += `<button onclick="switchSource(${i})">${s.name}</button>`;
-    });
-    document.getElementById('sources').innerHTML = html;
-}
-function switchSource(index) {
-    const url = sources[index].url + encodeURIComponent(currentKw);
-    document.getElementById('player').src = url;
-}
+                <div class="input-group">
+                    <input 
+                        v-model="url" 
+                        type="text" 
+                        class="input-field" 
+                        :placeholder="currentTab === 'image' ? '输入包含图片的豆包对话分享链接，例如：https://www.doubao.com/thread/xxxxx' : '输入豆包视频分享链接，例如：https://www.doubao.com/video-sharing?share_id=xxx&video_id=xxx'"
+                        @keyup.enter="parseUrl"
+                    >
+                    <button 
+                        class="btn btn-primary" 
+                        @click="parseUrl"
+                        :disabled="loading || !url"
+                    >
+                        {{ loading ? '⏳ 解析中...' : '🚀 开始解析' }}
+                    </button>
+                </div>
+            </div>
 
-document.getElementById('kw').addEventListener('keydown', e => {
-    if (e.key === 'Enter') search();
-});
-</script>
+            <div v-if="currentTab === 'image' && images.length > 0">
+                <div class="images-grid">
+                    <div v-for="(image, index) in images" :key="index" class="image-card" :style="{ animationDelay: `${index * 0.1}s` }">
+                        <img :src="image.url" :alt="`图片 ${index + 1}`" loading="lazy">
+                        <div class="image-info">
+                            📐 {{ image.width }} × {{ image.height }}
+                        </div>
+                        <div class="image-actions">
+                            <button class="action-btn" @click="viewImage(image.url)">
+                                👁️ 查看
+                            </button>
+                            <button 
+                                class="action-btn" 
+                                :class="{ success: downloadingIndex === index }"
+                                @click="downloadImage(image.url, index)"
+                            >
+                                {{ downloadingIndex === index ? '✅ 已下载' : '⬇️ 下载' }}
+                            </button>
+                            <button 
+                                class="action-btn" 
+                                :class="{ success: copiedIndex === index }"
+                                @click="copyUrl(image.url, index)"
+                            >
+                                {{ copiedIndex === index ? '✅ 已复制' : '📋 复制' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="currentTab === 'video' && video">
+                <div class="video-card">
+                    <video :src="video.url" :poster="video.poster_url" controls></video>
+                    <div class="video-info">
+                        📐 {{ video.width }} × {{ video.height }} | {{ video.definition }}
+                    </div>
+                    <div class="video-actions">
+                        <button class="action-btn" @click="viewVideo(video.url)">
+                            👁️ 查看
+                        </button>
+                        <button 
+                            class="action-btn" 
+                            :class="{ success: videoDownloading }"
+                            @click="downloadVideo()"
+                        >
+                            {{ videoDownloading ? '✅ 已下载' : '⬇️ 下载' }}
+                        </button>
+                        <button 
+                            class="action-btn" 
+                            :class="{ success: videoCopied }"
+                            @click="copyVideoUrl()"
+                        >
+                            {{ videoCopied ? '✅ 已复制' : '📋 复制链接' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="loading" class="loading">
+                <div class="spinner"></div>
+                <p>正在解析中，请稍候...</p>
+            </div>
+
+            <div v-if="!loading && currentTab === 'image' && images.length === 0" class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h3>暂无图片数据</h3>
+                <p>输入豆包对话链接并点击解析来提取图片</p>
+            </div>
+
+            <div v-if="!loading && currentTab === 'video' && !video" class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3>暂无视频数据</h3>
+                <p>输入豆包视频链接并点击解析来提取视频</p>
+            </div>
+        </div>
+
+        </div>
+   
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentTab: 'image',
+                    url: '',
+                    images: [],
+                    video: null,
+                    loading: false,
+                    error: '',
+                    downloadingIndex: null,
+                    copiedIndex: null,
+                    videoDownloading: false,
+                    videoCopied: false,
+                    apiBaseUrl: window.location.origin,
+                    urlRegex: /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g
+                }
+            },
+
+            methods: {
+                extractUrl(text) {
+                    if (!text) return null;
+                    const matches = text.match(this.urlRegex);
+                    return matches ? matches[0] : null;
+                },
+                async copyToClipboard(text) {
+                    try {
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            await navigator.clipboard.writeText(text);
+                        } else {
+                            const textArea = document.createElement('textarea');
+                            textArea.value = text;
+                            textArea.style.position = 'fixed';
+                            textArea.style.left = '-999999px';
+                            textArea.style.top = '-999999px';
+                            document.body.appendChild(textArea);
+                            textArea.focus();
+                            textArea.select();
+                            try {
+                                document.execCommand('copy');
+                            } finally {
+                                document.body.removeChild(textArea);
+                            }
+                        }
+                        return true;
+                    } catch (error) {
+                        return false;
+                    }
+                },
+                switchTab(tab) {
+                    this.currentTab = tab;
+                    this.url = '';
+                    this.error = '';
+                    if (tab === 'image') {
+                        this.video = null;
+                    } else if (tab === 'video') {
+                        this.images = [];
+                    }
+                    this.downloadingIndex = null;
+                    this.copiedIndex = null;
+                    this.videoDownloading = false;
+                    this.videoCopied = false;
+                },
+                async parseUrl() {
+                    if (!this.url.trim()) {
+                        this.showError('请输入包含链接的文本');
+                        return;
+                    }
+
+                    const extractedUrl = this.extractUrl(this.url);
+                    
+                    if (!extractedUrl) {
+                        this.showError('未在输入内容中找到有效的网址');
+                        return;
+                    }
+
+                    this.loading = true;
+                    this.error = '';
+                    this.images = [];
+                    this.video = null;
+                    this.downloadingIndex = null;
+                    this.copiedIndex = null;
+                    this.videoDownloading = false;
+                    this.videoCopied = false;
+
+                    try {
+                        if (this.currentTab === 'image') {
+                            const response = await axios.post(`${this.apiBaseUrl}/parse`, {
+                                url: extractedUrl
+                            });
+
+                            if (response.data.success) {
+                                this.images = response.data.images;
+                            } else {
+                                this.showError('解析失败，请检查链接是否正确');
+                            }
+                        } else {
+                            const response = await axios.post(`${this.apiBaseUrl}/parse-video`, {
+                                url: extractedUrl
+                            });
+
+                            if (response.data.success) {
+                                this.video = response.data.video;
+                            } else {
+                                this.showError('解析失败，请检查链接是否正确');
+                            }
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        if (error.response) {
+                            this.showError(error.response.data.detail || '解析失败');
+                        } else if (error.request) {
+                            this.showError('无法连接到服务器，请确保后端服务正在运行');
+                        } else {
+                            this.showError('发生未知错误');
+                        }
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                viewImage(url) {
+                    window.open(url, '_blank');
+                },
+                async downloadImage(url, index) {
+                    try {
+                        this.downloadingIndex = index;
+                        const response = await fetch(url);
+                        const blob = await response.blob();
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = `doubao_image_${index + 1}.jpg`;
+                        link.click();
+                        URL.revokeObjectURL(link.href);
+                        
+                        setTimeout(() => {
+                            this.downloadingIndex = null;
+                        }, 2000);
+                    } catch (error) {
+                        this.downloadingIndex = null;
+                        this.showError(`图片 ${index + 1} 下载失败`);
+                    }
+                },
+                async copyUrl(url, index) {
+                    const success = await this.copyToClipboard(url);
+                    
+                    if (success) {
+                        this.copiedIndex = index;
+                        setTimeout(() => {
+                            this.copiedIndex = null;
+                        }, 2000);
+                    } else {
+                        this.showError('复制失败，请手动复制');
+                    }
+                },
+                viewVideo(url) {
+                    window.open(url, '_blank');
+                },
+                async downloadVideo() {
+                    try {
+                        if (!this.video || !this.video.url) {
+                            this.showError('视频地址不存在');
+                            return;
+                        }
+                        this.videoDownloading = true;
+                        const response = await fetch(this.video.url);
+                        const blob = await response.blob();
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = `doubao_video.mp4`;
+                        link.click();
+                        URL.revokeObjectURL(link.href);
+                        
+                        setTimeout(() => {
+                            this.videoDownloading = false;
+                        }, 2000);
+                    } catch (error) {
+                        this.videoDownloading = false;
+                        this.showError('视频下载失败');
+                    }
+                },
+                async copyVideoUrl() {
+                    if (!this.video || !this.video.url) {
+                        this.showError('视频地址不存在');
+                        return;
+                    }
+                    
+                    const success = await this.copyToClipboard(this.video.url);
+                    
+                    if (success) {
+                        this.videoCopied = true;
+                        console.log('已复制视频地址:', this.video.url);
+                        setTimeout(() => {
+                            this.videoCopied = false;
+                        }, 2000);
+                    } else {
+                        console.error('复制失败');
+                        this.showError('复制失败，请手动复制');
+                    }
+                },
+                showError(message) {
+                    this.error = message;
+                    setTimeout(() => this.error = '', 5000);
+                }
+            },
+            mounted() {
+                const savedUrl = localStorage.getItem('lastUrl');
+                if (savedUrl) {
+                    this.url = savedUrl;
+                }
+                const savedTab = localStorage.getItem('lastTab');
+                if (savedTab) {
+                    this.currentTab = savedTab;
+                }
+            },
+            watch: {
+                url(newUrl) {
+                    if (newUrl) {
+                        localStorage.setItem('lastUrl', newUrl);
+                    }
+                },
+                currentTab(newTab) {
+                    localStorage.setItem('lastTab', newTab);
+                }
+            }
+        }).mount('#app');
+    </script>
 </body>
 </html>
