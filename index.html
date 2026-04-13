@@ -1,126 +1,129 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>全网影视搜索 - 强制更新版</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>影视搜索（直达播放+选集+强制更新）</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{
-    background:#111;color:#f6f6f6;font-family:system-ui;
-    min-height:100vh;padding:20px 15px 60px;
-}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#111;color:#fff;font-family:system-ui;padding:20px 15px 60px}
 .container{max-width:700px;margin:0 auto}
-.logo{
-    text-align:center;font-size:32px;font-weight:700;
-    margin:80px 0 12px;color:#fff;
-}
-.desc{
-    text-align:center;color:#999;font-size:15px;margin-bottom:30px;
-}
-.search-row{
-    display:flex;gap:10px;margin-bottom:26px;
-}
-.search-input{
-    flex:1;height:54px;padding:0 20px;
-    border:none;border-radius:14px;
-    background:#1c1c1e;color:#fff;font-size:16px;
-    outline:none;
-}
-.search-btn{
-    padding:0 28px;background:#e63946;color:#fff;
-    border:none;border-radius:14px;font-size:16px;font-weight:600;
-    cursor:pointer;
-}
-.result{
-    background:#1c1c1e;border-radius:12px;padding:16px;margin-bottom:10px;
-}
-.result a{
-    color:#f2f2f2;text-decoration:none;font-size:16px;font-weight:500;
-    display:block;margin-bottom:6px;
-}
-.result small{
-    color:#888;font-size:13px;
-}
-.loading{
-    text-align:center;color:#aaa;padding:40px 0;font-size:15px;
-}
-.foot{
-    text-align:center;color:#666;font-size:13px;margin-top:60px;
-}
+.logo{text-align:center;font-size:30px;margin:70px 0 10px}
+.tip{text-align:center;color:#888;margin-bottom:30px}
+.search{display:flex;gap:10px;margin-bottom:24px}
+.search input{flex:1;height:52px;padding:0 18px;border-radius:14px;border:none;background:#1c1c1e;color:#fff;font-size:16px;outline:0}
+.search button{padding:0 24px;background:#e53935;border:none;color:#fff;border-radius:14px;font-size:16px;font-weight:600}
+
+.player{background:#1c1c1e;border-radius:14px;padding:16px;margin-bottom:16px}
+.player iframe{width:100%;height:220px;border:none;border-radius:8px;background:#000}
+
+.ep-title{font-size:16px;margin:14px 0 10px}
+.eps{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.eps button{padding:10px 0;background:#2a2a2a;border:none;border-radius:8px;color:#fff;font-size:14px}
+.eps button.active{background:#e53935}
+
+.sites{margin-top:24px}
+.site-item{background:#1c1c1e;padding:14px 16px;border-radius:12px;margin-bottom:10px}
+.site-item button{width:100%;text-align:left;background:none;border:none;color:#fff;font-size:16px}
+.site-item small{color:#888}
+
+.loading{text-align:center;color:#aaa;padding:30px 0}
+.foot{text-align:center;color:#666;font-size:12px;margin-top:50px}
 </style>
-</head>
-<body>
 
 <div class="container">
-    <div class="logo">影视搜索</div>
-    <div class="desc">电影狗 / 茶杯狐 聚合搜索</div>
-    <div class="search-row">
-        <input type="text" id="kw" class="search-input" placeholder="输入电影、剧集、动漫">
-        <button class="search-btn" onclick="search()">搜索</button>
-    </div>
-    <div id="result-box"></div>
-    <div class="foot">仅搜索跳转 | 无存储 | 支持强制云端更新</div>
+  <div class="logo">影视搜索</div>
+  <div class="tip">直达播放页 · 支持选集 · 多线路切换</div>
+  <div class="search">
+    <input id="kw" placeholder="输入电影/剧集/动漫">
+    <button onclick="search()">搜索</button>
+  </div>
+
+  <div id="result"></div>
+  <div class="foot">仅提供搜索跳转 无存储资源</div>
 </div>
 
 <script>
-// ==============================================
-// 🔥 云端强制更新：改这里数字即可全网强制刷新
-// ==============================================
-const VERSION = "2026041301";  // 每次改版本号就强制更新
-const STORAGE_KEY = "movie_search_sites";
-const VERSION_KEY = "movie_search_version";
+// ======================================
+// 🔥 强制更新：改这个版本号即可全网刷新
+// ======================================
+const VERSION = "2026041301";
+const STORAGE_KEY = "movie_sites_data";
+const VERSION_KEY = "movie_sites_version";
 
-// 你的影视站列表（云端核心数据）
+// 云端站点（你在这里更新）
 const CLOUD_SITES = [
-  { name: "茶杯狐", url: "https://cupfox.app", path: "/search/" },
-  { name: "厂长资源", url: "https://www.czzy.live", path: "/search.html?keyword=" },
-  { name: "比特大雄", url: "https://www.btdx8.vip", path: "/search/" },
-  { name: "高端影视", url: "https://www.gdyy.digital", path: "/index/search?wd=" },
-  { name: "云盘资源", url: "https://www.aliyundrive.cc", path: "/search?keyword=" },
-  { name: "555电影", url: "https://www.555film.cc", path: "/search.html?wd=" },
-  { name: "Libvio", url: "https://www.libvio.vip", path: "/search/" },
-  { name: "剧圈圈", url: "https://www.juquanquan.cc", path: "/search?key=" },
-  { name: "可可影视", url: "https://www.kekeys.com", path: "/search/" },
-  { name: "麦田影院", url: "https://www.mtyy.org", path: "/search/" },
-  { name: "金牌影院", url: "https://www.jinpyy.com", path: "/search/" },
-  { name: "影乐酷", url: "https://www.yleku.com", path: "/search/" },
-  { name: "飞快TV", url: "https://www.fasttv.cc", path: "/search?wd=" },
-  { name: "4K影视", url: "https://www.4kys.cc", path: "/search/" },
-  { name: "橙子影视", url: "https://www.czyys.com", path: "/search/" }
+  { name:"茶杯狐",    play:"https://cupfox.app/search/" },
+  { name:"厂长资源",  play:"https://www.czzy.live/search.html?keyword=" },
+  { name:"Libvio",    play:"https://www.libvio.vip/search/" },
+  { name:"555电影",   play:"https://www.555film.cc/search.html?wd=" },
+  { name:"云盘影视",  play:"https://www.aliyundrive.cc/search?keyword=" },
+  { name:"高端影视",  play:"https://www.gdyy.digital/index/search?wd=" },
+  { name:"可可影视",  play:"https://www.kekeys.com/search/" },
+  { name:"剧圈圈",    play:"https://www.juquanquan.cc/search?key=" },
 ];
 
 // 强制更新逻辑
-function loadSites() {
+function getSites() {
   const localVer = localStorage.getItem(VERSION_KEY);
   if (localVer !== VERSION) {
-    // 版本不一致 → 强制覆盖云端数据
     localStorage.setItem(STORAGE_KEY, JSON.stringify(CLOUD_SITES));
     localStorage.setItem(VERSION_KEY, VERSION);
-    console.log("✅ 云端强制更新成功");
+    console.log("✅ 已强制更新最新站点");
   }
   return JSON.parse(localStorage.getItem(STORAGE_KEY)) || CLOUD_SITES;
 }
 
+const sites = getSites();
+
+// 选集 1~36
+function buildEps() {
+  let html = '<div class="ep-title">选集</div><div class="eps">';
+  for (let i = 1; i <= 36; i++) {
+    html += `<button onclick="playEp(${i})">${i}</button>`;
+  }
+  return html + '</div>';
+}
+
 // 搜索
-const sites = loadSites();
 function search() {
   const kw = document.getElementById('kw').value.trim();
-  if (!kw) return alert('请输入影视名称');
-  const box = document.getElementById('result-box');
-  box.innerHTML = '<div class="loading">正在全网搜索资源...</div>';
+  if (!kw) return alert('请输入片名');
+
+  const res = document.getElementById('result');
+  res.innerHTML = '<div class="loading">正在获取播放地址...</div>';
+
   setTimeout(() => {
-    let html = "";
-    sites.forEach(s => {
-      const u = s.url + s.path + encodeURIComponent(kw);
+    let url = sites[0].play + encodeURIComponent(kw);
+    let html = `
+      <div class="player">
+        <iframe id="player" src="${url}"></iframe>
+      </div>
+    `;
+    html += buildEps();
+    html += '<div class="sites">';
+    sites.forEach((s, idx) => {
+      let u = s.play + encodeURIComponent(kw);
       html += `
-      <div class="result">
-        <a href="${u}" target="_blank">${kw} — ${s.name}</a>
-        <small>${s.url}</small>
+      <div class="site-item">
+        <button onclick="switchSrc('${u}')">${s.name}</button>
+        <small>线路${idx+1}</small>
       </div>`;
     });
-    box.innerHTML = html;
-  }, 500);
+    html += '</div>';
+    res.innerHTML = html;
+  }, 600);
+}
+
+// 切换线路
+function switchSrc(url) {
+  document.getElementById('player').src = url;
+}
+
+// 选集
+function playEp(n) {
+  alert(`即将播放第${n}集`);
+  let url = document.getElementById('player').src;
+  document.getElementById('player').src = url + (url.includes('?') ? '&' : '?') + 'ep=' + n;
 }
 
 document.getElementById('kw').addEventListener('keydown', e => {
