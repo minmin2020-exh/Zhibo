@@ -1,985 +1,507 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="no-referrer">
-    <title>知网豆包图片视频解析</title>
-    <link rel="icon" type="image/png" sizes="16x16" href="http://doubao.xyyh.xyz/icons/icon16.png">
-    <link rel="icon" type="image/png" sizes="48x48" href="http://doubao.xyyh.xyz/icons/icon48.png">
-    <link rel="icon" type="image/png" sizes="128x128" href="http://doubao.xyyh.xyz/icons/icon128.png">
-    <script src="yibazhan/js/vue.global.prod.js"></script>
-    <script src="yibazhan/js/axios.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #1f1f1f;
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        #app {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 24px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            position: relative;
-            z-index: 1;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            animation: fadeInDown 0.8s ease;
-        }
-
-        .header-top {
-            margin-bottom: 16px;
-        }
-
-        .header h1 {
-            font-size: 48px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            letter-spacing: -1px;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 400;
-        }
-
-        .image-count {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border-radius: 50px;
-            font-size: 14px;
-            color: #ffffff;
-            font-weight: 500;
-            margin-top: 16px;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        .image-count span {
-            font-weight: 700;
-            font-size: 18px;
-        }
-
-        .main-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            padding: 32px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-            animation: fadeInUp 0.8s ease;
-        }
-
-        .input-section {
-            margin-bottom: 32px;
-        }
-
-        .tab-buttons {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
-            background: #f5f5f5;
-            padding: 6px;
-            border-radius: 12px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            background: transparent;
-            color: #666;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .tab-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .tab-btn:hover:not(.active) {
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .input-field {
-            flex: 1;
-            padding: 16px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 15px;
-            background: #ffffff;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .input-field:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-        }
-
-        .input-field::placeholder {
-            color: #a0a0a0;
-        }
-
-        .btn {
-            padding: 16px 32px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-        }
-
-        .btn-primary:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        .btn-primary:disabled {
-            background: #e0e0e0;
-            color: #a0a0a0;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        .alert {
-            padding: 16px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            animation: shake 0.5s ease;
-        }
-
-        .alert-error {
-            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
-            color: #c53030;
-            border-left: 4px solid #fc8181;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px 0;
-        }
-
-        .spinner {
-            border: 3px solid #f0f0f0;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        .loading p {
-            color: #666;
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .images-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 24px;
-            margin-top: 32px;
-        }
-
-        .image-card {
-            position: relative;
-            border-radius: 16px;
-            overflow: hidden;
-            background: #ffffff;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-            animation: fadeInUp 0.6s ease;
-        }
-
-        .image-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .image-card:hover .image-info {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .image-card img {
-            width: 100%;
-            height: 260px;
-            object-fit: cover;
-            display: block;
-            transition: transform 0.3s ease;
-        }
-
-        .image-card:hover img {
-            transform: scale(1.05);
-        }
-
-        .image-info {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            padding: 6px 12px;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            font-size: 12px;
-            color: #ffffff;
-            font-weight: 600;
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
-        }
-
-        .image-actions {
-            display: flex;
-            gap: 8px;
-            padding: 16px;
-            background: #ffffff;
-        }
-
-        .action-btn {
-            flex: 1;
-            padding: 10px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            background: #ffffff;
-            color: #666;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .action-btn:hover {
-            border-color: #667eea;
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.05);
-        }
-
-        .action-btn.success {
-            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-            border-color: #48bb78;
-            color: #ffffff;
-        }
-
-        .video-card {
-            position: relative;
-            border-radius: 16px;
-            overflow: hidden;
-            background: #000000;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            animation: fadeInUp 0.6s ease;
-        }
-
-        .video-card video {
-            width: 100%;
-            height: auto;
-            max-height: 500px;
-            object-fit: contain;
-            background: #000000;
-            display: block;
-        }
-
-        .video-info {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            padding: 6px 12px;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            font-size: 12px;
-            color: #ffffff;
-            font-weight: 600;
-        }
-
-        .video-actions {
-            display: flex;
-            gap: 8px;
-            padding: 16px;
-            background: #ffffff;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 80px 20px;
-        }
-
-        .empty-state svg {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
-            stroke: #cbd5e0;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        .empty-state h3 {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #4a5568;
-        }
-
-        .empty-state p {
-            font-size: 15px;
-            color: #a0aec0;
-        }
-
-        .footer {
-            margin-top: auto;
-            padding: 40px 0 20px;
-            text-align: center;
-        }
-
-        .footer-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .footer-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: rgba(255, 255, 255, 0.9);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            padding: 8px 16px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        .footer-link:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
-            transform: translateY(-2px);
-        }
-
-        .footer-link svg {
-            width: 18px;
-            height: 18px;
-        }
-
-        .footer-divider {
-            width: 1px;
-            height: 16px;
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .footer-text {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        @media (max-width: 768px) {
-            #app {
-                padding: 24px 16px;
-            }
-
-            .header {
-                margin-bottom: 24px;
-            }
-
-            .header h1 {
-                font-size: 36px;
-            }
-
-            .header p {
-                font-size: 14px;
-            }
-
-            .main-card {
-                padding: 20px;
-                border-radius: 20px;
-            }
-
-            .tab-buttons {
-                gap: 8px;
-            }
-
-            .tab-btn {
-                padding: 10px 16px;
-                font-size: 14px;
-            }
-
-            .input-group {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .btn {
-                width: 100%;
-                padding: 14px 24px;
-            }
-
-            .images-grid {
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-                gap: 16px;
-            }
-
-            .image-card img {
-                height: 200px;
-            }
-
-            .image-actions,
-            .video-actions {
-                flex-wrap: wrap;
-                gap: 8px;
-                padding: 12px;
-            }
-
-            .action-btn {
-                flex: 1 1 calc(50% - 4px);
-                font-size: 13px;
-                padding: 8px 12px;
-            }
-
-            .image-info,
-            .video-info {
-                opacity: 1;
-                transform: translateY(0);
-                font-size: 11px;
-            }
-
-            .footer-content {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .footer-divider {
-                display: none;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 28px;
-            }
-
-            .main-card {
-                padding: 16px;
-            }
-
-            .images-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-            }
-
-            .image-card img {
-                height: 160px;
-            }
-
-            .image-card {
-                border-radius: 12px;
-            }
-
-            .action-btn {
-                flex: 1 1 100%;
-            }
-        }
-
-        @media (hover: none) and (pointer: coarse) {
-            .tab-btn,
-            .btn,
-            .action-btn {
-                min-height: 44px;
-            }
-
-            .input-field {
-                min-height: 44px;
-            }
-
-            .image-info,
-            .video-info {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>东风吹破少年梦，从此再无赤子心！</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+    background:#000 url("https://icdn.binmt.cc/2604/69db59cbd3beb.jpeg") center/cover fixed;
+    color:#fff;
+    font-family:system-ui,roboto;
+    min-height:100vh;
+    padding:20px;
+    padding-bottom:40px;
+    overflow-x:hidden;
+}
+
+#fireworks{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    pointer-events:none;
+    z-index:1;
+}
+
+.container{
+    max-width:500px;
+    margin:0 auto;
+    position:relative;
+    z-index:2
+}
+.datetime{
+    text-align:center;
+    margin:40px 0 24px;
+    text-shadow:0 2px 10px rgba(0,0,0,.5);
+    cursor:pointer;
+    user-select:none;
+}
+.time{
+    font-size:3.2rem;
+    font-weight:700
+}
+.date{
+    font-size:1rem;
+    opacity:.9
+}
+.search-wrap{
+    position:relative;
+    margin-bottom:12px
+}
+.search-bar{
+    background:rgba(255,255,255,.12);
+    backdrop-filter:blur(6px);
+    border-radius:30px;
+    height:56px
+}
+.search-input{
+    width:100%;
+    height:100%;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:#fff;
+    font-size:16px;
+    padding:0 20px;
+    border-radius:30px
+}
+.suggest{
+    position:absolute;
+    top:100%;
+    left:0;
+    right:0;
+    margin-top:4px;
+    background:rgba(0,0,0,.6);
+    backdrop-filter:blur(12px);
+    border-radius:16px;
+    padding:8px;
+    display:none;
+    z-index:999;
+    max-height:240px;
+    overflow-y:auto
+}
+.suggest.show{display:block}
+.suggest-item{
+    padding:10px 14px;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:15px
+}
+.suggest-item:hover{background:rgba(255,255,255,.1)}
+
+.nav-box{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-top:20px;
+    transition:.3s ease
+}
+.nav-box.hide{
+    opacity:0;
+    transform:translateY(10px);
+    pointer-events:none
+}
+
+.item.hidden {
+    display: none;
+}
+
+.item{
+    display:flex;flex-direction:column;align-items:center;
+    gap:6px;text-decoration:none;color:#fff;font-size:12px;
+    user-select:none;touch-action:none;
+}
+.icon{
+    width:50px;height:50px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;font-weight:bold
+}
+
+.add-btn {
+    cursor: pointer;
+}
+.add-btn span{display:none}
+
+.mask{
+    position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);
+    z-index:9999;display:none;align-items:center;justify-content:center
+}
+.mask.show{display:flex}
+.modal{
+    background:#111;padding:24px;border-radius:16px;width:90%;max-width:320px
+}
+.modal input{
+    width:100%;padding:12px 14px;margin:8px 0;border-radius:10px;border:none;background:#222;color:#fff
+}
+.modal .btns{display:flex;gap:10px;margin-top:12px}
+.modal button{flex:1;padding:10px;border:none;border-radius:10px;cursor:pointer}
+.modal .ok{background:#07c160;color:#fff}
+.modal .cancel{background:#333;color:#fff}
+
+.menu{
+    position:absolute;background:#1a1a1a;border-radius:12px;padding:8px 0;
+    z-index:9999;min-width:140px;display:none
+}
+.menu.show{display:block}
+.menu div{padding:10px 16px;cursor:pointer}
+.menu div:hover{background:#333}
+
+.item:nth-child(4n+1) .icon{background:#ff6b6b}
+.item:nth-child(4n+2) .icon{background:#4dabf7}
+.item:nth-child(4n+3) .icon{background:#51cf66}
+.item:nth-child(4n+4) .icon{background:#fab005}
+
+@keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+</style>
 </head>
 <body>
-    <div id="app">
-        <div class="header">
-            <div class="header-top">
-                <h1>✨ 知网豆包图片视频解析</h1>
-                <p>一键提取豆包对话中的高清图片和视频，无水印、无压缩</p>
-                <div v-if="currentTab === 'image' && images.length > 0" class="image-count">
-                    🎉 已提取 <span>{{ images.length }}</span> 张图片
-                </div>
-                <div v-if="currentTab === 'video' && video" class="image-count">
-                    🎬 已提取 <span>1</span> 个视频
-                </div>
-            </div>
+
+<canvas id="fireworks"></canvas>
+
+<div style="position:fixed;bottom:0;left:0;width:100%;background:rgba(0,0,0,0.5);color:#fff;padding:6px 0;font-size:14px;overflow:hidden;white-space:nowrap;z-index:999;">
+  <div style="display:inline-block;animation:marquee 14s linear infinite;">
+    欢迎来到我的主页，代缴话费，电费，燃气等费用，欢迎咨询
+  </div>
+</div>
+
+<div class="mask" id="addMask">
+    <div class="modal">
+        <input id="addName" placeholder="名称">
+        <input id="addUrl" placeholder="网址">
+        <div class="btns">
+            <button class="cancel" onclick="closeAdd()">取消</button>
+            <button class="ok" onclick="saveAdd()">添加</button>
         </div>
+    </div>
+</div>
 
-        <div class="main-card">
-            <div class="input-section">
-                <div class="tab-buttons">
-                    <button 
-                        class="tab-btn" 
-                        :class="{ active: currentTab === 'image' }"
-                        @click="switchTab('image')"
-                    >
-                        🖼️ 图片解析
-                    </button>
-                    <button 
-                        class="tab-btn" 
-                        :class="{ active: currentTab === 'video' }"
-                        @click="switchTab('video')"
-                    >
-                        🎥 视频解析
-                    </button>
-                </div>
-
-                <div v-if="error" class="alert alert-error">
-                    ⚠️ {{ error }}
-                </div>
-
-                <div class="input-group">
-                    <input 
-                        v-model="url" 
-                        type="text" 
-                        class="input-field" 
-                        :placeholder="currentTab === 'image' ? '输入包含图片的豆包对话分享链接，例如：https://www.doubao.com/thread/xxxxx' : '输入豆包视频分享链接，例如：https://www.doubao.com/video-sharing?share_id=xxx&video_id=xxx'"
-                        @keyup.enter="parseUrl"
-                    >
-                    <button 
-                        class="btn btn-primary" 
-                        @click="parseUrl"
-                        :disabled="loading || !url"
-                    >
-                        {{ loading ? '⏳ 解析中...' : '🚀 开始解析' }}
-                    </button>
-                </div>
-            </div>
-
-            <div v-if="currentTab === 'image' && images.length > 0">
-                <div class="images-grid">
-                    <div v-for="(image, index) in images" :key="index" class="image-card" :style="{ animationDelay: `${index * 0.1}s` }">
-                        <img :src="image.url" :alt="`图片 ${index + 1}`" loading="lazy">
-                        <div class="image-info">
-                            📐 {{ image.width }} × {{ image.height }}
-                        </div>
-                        <div class="image-actions">
-                            <button class="action-btn" @click="viewImage(image.url)">
-                                👁️ 查看
-                            </button>
-                            <button 
-                                class="action-btn" 
-                                :class="{ success: downloadingIndex === index }"
-                                @click="downloadImage(image.url, index)"
-                            >
-                                {{ downloadingIndex === index ? '✅ 已下载' : '⬇️ 下载' }}
-                            </button>
-                            <button 
-                                class="action-btn" 
-                                :class="{ success: copiedIndex === index }"
-                                @click="copyUrl(image.url, index)"
-                            >
-                                {{ copiedIndex === index ? '✅ 已复制' : '📋 复制' }}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div v-if="currentTab === 'video' && video">
-                <div class="video-card">
-                    <video :src="video.url" :poster="video.poster_url" controls></video>
-                    <div class="video-info">
-                        📐 {{ video.width }} × {{ video.height }} | {{ video.definition }}
-                    </div>
-                    <div class="video-actions">
-                        <button class="action-btn" @click="viewVideo(video.url)">
-                            👁️ 查看
-                        </button>
-                        <button 
-                            class="action-btn" 
-                            :class="{ success: videoDownloading }"
-                            @click="downloadVideo()"
-                        >
-                            {{ videoDownloading ? '✅ 已下载' : '⬇️ 下载' }}
-                        </button>
-                        <button 
-                            class="action-btn" 
-                            :class="{ success: videoCopied }"
-                            @click="copyVideoUrl()"
-                        >
-                            {{ videoCopied ? '✅ 已复制' : '📋 复制链接' }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div v-if="loading" class="loading">
-                <div class="spinner"></div>
-                <p>正在解析中，请稍候...</p>
-            </div>
-
-            <div v-if="!loading && currentTab === 'image' && images.length === 0" class="empty-state">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <h3>暂无图片数据</h3>
-                <p>输入豆包对话链接并点击解析来提取图片</p>
-            </div>
-
-            <div v-if="!loading && currentTab === 'video' && !video" class="empty-state">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3>暂无视频数据</h3>
-                <p>输入豆包视频链接并点击解析来提取视频</p>
-            </div>
+<div class="mask" id="editMask">
+    <div class="modal">
+        <input id="editName" placeholder="名称">
+        <input id="editUrl" placeholder="网址">
+        <div class="btns">
+            <button class="cancel" onclick="closeEdit()">取消</button>
+            <button class="ok" onclick="saveEdit()">保存</button>
         </div>
+    </div>
+</div>
 
+<div class="menu" id="longMenu">
+    <div onclick="openEdit()">编辑</div>
+    <div onclick="doDel()" style="color:#ff4444">删除</div>
+</div>
+
+<div class="container">
+    <div class="datetime" id="timeTrigger">
+        <div class="time" id="time">00:00:00</div>
+        <div class="date" id="date">2026-04-12 星期日</div>
+    </div>
+
+    <div class="search-wrap">
+        <div class="search-bar">
+            <input type="text" id="searchInput" class="search-input" placeholder="搜索一下~">
         </div>
-   
+        <div class="suggest" id="suggest"></div>
+    </div>
 
-    <script>
-        const { createApp } = Vue;
+    <div class="nav-box" id="navBox"></div>
+</div>
 
-        createApp({
-            data() {
-                return {
-                    currentTab: 'image',
-                    url: '',
-                    images: [],
-                    video: null,
-                    loading: false,
-                    error: '',
-                    downloadingIndex: null,
-                    copiedIndex: null,
-                    videoDownloading: false,
-                    videoCopied: false,
-                    apiBaseUrl: window.location.origin,
-                    urlRegex: /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g
-                }
-            },
+<script>
+// 版本号（用于云端同步更新）
+const VERSION = '1.2.0';
 
-            methods: {
-                extractUrl(text) {
-                    if (!text) return null;
-                    const matches = text.match(this.urlRegex);
-                    return matches ? matches[0] : null;
-                },
-                async copyToClipboard(text) {
-                    try {
-                        if (navigator.clipboard && navigator.clipboard.writeText) {
-                            await navigator.clipboard.writeText(text);
-                        } else {
-                            const textArea = document.createElement('textarea');
-                            textArea.value = text;
-                            textArea.style.position = 'fixed';
-                            textArea.style.left = '-999999px';
-                            textArea.style.top = '-999999px';
-                            document.body.appendChild(textArea);
-                            textArea.focus();
-                            textArea.select();
-                            try {
-                                document.execCommand('copy');
-                            } finally {
-                                document.body.removeChild(textArea);
-                            }
-                        }
-                        return true;
-                    } catch (error) {
-                        return false;
-                    }
-                },
-                switchTab(tab) {
-                    this.currentTab = tab;
-                    this.url = '';
-                    this.error = '';
-                    if (tab === 'image') {
-                        this.video = null;
-                    } else if (tab === 'video') {
-                        this.images = [];
-                    }
-                    this.downloadingIndex = null;
-                    this.copiedIndex = null;
-                    this.videoDownloading = false;
-                    this.videoCopied = false;
-                },
-                async parseUrl() {
-                    if (!this.url.trim()) {
-                        this.showError('请输入包含链接的文本');
-                        return;
-                    }
+const canvas = document.getElementById('fireworks');
+const ctx = canvas.getContext('2d');
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
 
-                    const extractedUrl = this.extractUrl(this.url);
-                    
-                    if (!extractedUrl) {
-                        this.showError('未在输入内容中找到有效的网址');
-                        return;
-                    }
+let fireworks = [];
+let particles = [];
 
-                    this.loading = true;
-                    this.error = '';
-                    this.images = [];
-                    this.video = null;
-                    this.downloadingIndex = null;
-                    this.copiedIndex = null;
-                    this.videoDownloading = false;
-                    this.videoCopied = false;
+function random(min, max) {
+    return Math.random() * (max - min) + min;
+}
 
-                    try {
-                        if (this.currentTab === 'image') {
-                            const response = await axios.post(`${this.apiBaseUrl}/parse`, {
-                                url: extractedUrl
-                            });
+class Firework {
+    constructor() {
+        this.x = random(50, canvas.width - 50);
+        this.y = canvas.height;
+        this.targetY = random(50, canvas.height / 2);
+        this.speed = random(6, 10);
+        this.color = `hsl(${random(0, 360)}, 100%, 60%)`;
+    }
+    update() {
+        this.y -= this.speed;
+        if (this.y < this.targetY) {
+            this.explode();
+            return true;
+        }
+        return false;
+    }
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+    }
+    explode() {
+        for (let i = 0; i < 80; i++) {
+            particles.push(new Particle(this.x, this.y, this.color));
+        }
+    }
+}
 
-                            if (response.data.success) {
-                                this.images = response.data.images;
-                            } else {
-                                this.showError('解析失败，请检查链接是否正确');
-                            }
-                        } else {
-                            const response = await axios.post(`${this.apiBaseUrl}/parse-video`, {
-                                url: extractedUrl
-                            });
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = random(-6, 6);
+        this.vy = random(-6, 6);
+        this.alpha = 1;
+        this.color = color;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha -= 0.015;
+    }
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.restore();
+    }
+}
 
-                            if (response.data.success) {
-                                this.video = response.data.video;
-                            } else {
-                                this.showError('解析失败，请检查链接是否正确');
-                            }
-                        }
-                    } catch (error) {
-                        console.error(error);
-                        if (error.response) {
-                            this.showError(error.response.data.detail || '解析失败');
-                        } else if (error.request) {
-                            this.showError('无法连接到服务器，请确保后端服务正在运行');
-                        } else {
-                            this.showError('发生未知错误');
-                        }
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-                viewImage(url) {
-                    window.open(url, '_blank');
-                },
-                async downloadImage(url, index) {
-                    try {
-                        this.downloadingIndex = index;
-                        const response = await fetch(url);
-                        const blob = await response.blob();
-                        const link = document.createElement('a');
-                        link.href = URL.createObjectURL(blob);
-                        link.download = `doubao_image_${index + 1}.jpg`;
-                        link.click();
-                        URL.revokeObjectURL(link.href);
-                        
-                        setTimeout(() => {
-                            this.downloadingIndex = null;
-                        }, 2000);
-                    } catch (error) {
-                        this.downloadingIndex = null;
-                        this.showError(`图片 ${index + 1} 下载失败`);
-                    }
-                },
-                async copyUrl(url, index) {
-                    const success = await this.copyToClipboard(url);
-                    
-                    if (success) {
-                        this.copiedIndex = index;
-                        setTimeout(() => {
-                            this.copiedIndex = null;
-                        }, 2000);
-                    } else {
-                        this.showError('复制失败，请手动复制');
-                    }
-                },
-                viewVideo(url) {
-                    window.open(url, '_blank');
-                },
-                async downloadVideo() {
-                    try {
-                        if (!this.video || !this.video.url) {
-                            this.showError('视频地址不存在');
-                            return;
-                        }
-                        this.videoDownloading = true;
-                        const response = await fetch(this.video.url);
-                        const blob = await response.blob();
-                        const link = document.createElement('a');
-                        link.href = URL.createObjectURL(blob);
-                        link.download = `doubao_video.mp4`;
-                        link.click();
-                        URL.revokeObjectURL(link.href);
-                        
-                        setTimeout(() => {
-                            this.videoDownloading = false;
-                        }, 2000);
-                    } catch (error) {
-                        this.videoDownloading = false;
-                        this.showError('视频下载失败');
-                    }
-                },
-                async copyVideoUrl() {
-                    if (!this.video || !this.video.url) {
-                        this.showError('视频地址不存在');
-                        return;
-                    }
-                    
-                    const success = await this.copyToClipboard(this.video.url);
-                    
-                    if (success) {
-                        this.videoCopied = true;
-                        console.log('已复制视频地址:', this.video.url);
-                        setTimeout(() => {
-                            this.videoCopied = false;
-                        }, 2000);
-                    } else {
-                        console.error('复制失败');
-                        this.showError('复制失败，请手动复制');
-                    }
-                },
-                showError(message) {
-                    this.error = message;
-                    setTimeout(() => this.error = '', 5000);
-                }
-            },
-            mounted() {
-                const savedUrl = localStorage.getItem('lastUrl');
-                if (savedUrl) {
-                    this.url = savedUrl;
-                }
-                const savedTab = localStorage.getItem('lastTab');
-                if (savedTab) {
-                    this.currentTab = savedTab;
-                }
-            },
-            watch: {
-                url(newUrl) {
-                    if (newUrl) {
-                        localStorage.setItem('lastUrl', newUrl);
-                    }
-                },
-                currentTab(newTab) {
-                    localStorage.setItem('lastTab', newTab);
-                }
-            }
-        }).mount('#app');
-    </script>
+function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    fireworks = fireworks.filter(f => !f.update());
+    particles = particles.filter(p => p.alpha > 0);
+    fireworks.forEach(f => f.draw());
+    particles.forEach(p => {
+        p.update();
+        p.draw();
+    });
+    requestAnimationFrame(loop);
+}
+
+setInterval(() => fireworks.push(new Firework()), 1000);
+loop();
+
+function updateDateTime(){
+    const now=new Date();
+    const w=['日','一','二','三','四','五','六'];
+    document.getElementById('time').textContent=now.toTimeString().slice(0,8);
+    document.getElementById('date').textContent=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,0)}-${String(now.getDate()).padStart(2,0)} 星期${w[now.getDay()]}`
+}
+setInterval(updateDateTime,1000);
+updateDateTime();
+
+const search=document.getElementById('searchInput');
+const nav=document.getElementById('navBox');
+const suggest=document.getElementById('suggest');
+let timer;
+
+let hasSearched = false;
+
+// 关闭百度联想搜索，避免跨域报错
+function getSuggest(word){}
+
+function searchFn(q){
+    if(!q)return;
+    // 替换为你的网盘搜索
+    window.open(q.startsWith('http')?q:`https://minmin2020-exh.github.io/pansou/?wd=${encodeURIComponent(q)}`);
+    hasSearched = true;
+    search.value = '';
+    nav.classList.remove('hide');
+    suggest.classList.remove('show');
+}
+
+window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && hasSearched) {
+        hasSearched = false;
+        location.reload();
+    }
+});
+
+search.addEventListener('input',()=>{
+    clearTimeout(timer);
+    const v=search.value.trim();
+    v ? (nav.classList.add('hide'), timer=setTimeout(()=>getSuggest(v),100)) : (nav.classList.remove('hide'), suggest.classList.remove('show'))
+});
+search.addEventListener('blur',()=>setTimeout(()=>suggest.classList.remove('show'),200));
+search.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+        searchFn(search.value.trim());
+    }
+});
+
+function fixUrl(url){
+    if(!url) return '';
+    if(!/^https?:\/\//i.test(url)) return 'http://'+url;
+    return url;
+}
+
+// ==============================================
+// 系统固定书签
+const SYS_BOOKMARKS = [
+    {name:'后台', url:'http://38.246.248.159/agent.php/login/login.html', hide:true, isSys:true},
+    {name:'查询', url:'http://38.246.248.159/#/pages/other/qorder', hide:true, isSys:true},
+    {name:'谷歌', url:'https://2fa.run/', hide:true, isSys:true},
+    {name:'豆包', url:'http://doubao.xyyh.xyz/', hide:false, isSys:true},
+    {name:'美图', url:'https://mmrgb.com/', hide:false, isSys:true}
+];
+
+// 本地自定义书签
+let userBookmarks = JSON.parse(localStorage.getItem('userBookmarks') || '[]');
+
+// 最终列表
+let list = [...SYS_BOOKMARKS, ...userBookmarks];
+// ==============================================
+
+// 点击时间三次显示/隐藏系统隐藏书签
+let clickCount = 0;
+let clickTimer;
+document.getElementById('timeTrigger').onclick = () => {
+    clickCount++;
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(() => clickCount = 0, 800);
+    if (clickCount === 3) {
+        clickCount = 0;
+        document.querySelectorAll('.item.hidden').forEach(el => {
+            el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+        });
+    }
+};
+
+let currentIndex = null;
+
+function render(){
+    let html = '';
+    list.forEach((it,i)=>{
+        const t = it.name.charAt(0);
+        const cls = it.hide ? 'item hidden' : 'item';
+        html+=`
+        <a class="${cls}" data-index="${i}" href="${it.url}" target="_blank">
+            <div class="icon">${t}</div>
+            <span>${it.name}</span>
+        </a>`;
+    });
+    html+=`
+    <div class="item add-btn" onclick="openAdd()">
+        <div class="icon">+</div>
+    </div>`;
+    nav.innerHTML = html;
+    bindLongPress();
+}
+
+function bindLongPress(){
+    const items = document.querySelectorAll('.item:not(.add-btn)');
+    let longTimer;
+    items.forEach(el=>{
+        el.ontouchstart = el.onmousedown = (e)=>{
+            longTimer = setTimeout(()=>{
+                if(e.type === 'mousedown') e.preventDefault();
+                currentIndex = parseInt(el.dataset.index);
+                showMenu(el);
+            }, 500);
+        };
+        el.ontouchend = el.onmouseup = ()=>clearTimeout(longTimer);
+        el.onmouseleave = ()=>clearTimeout(longTimer);
+    });
+}
+
+const menu = document.getElementById('longMenu');
+function showMenu(el){
+    const rect = el.getBoundingClientRect();
+    menu.style.left = rect.left + 'px';
+    menu.style.top = rect.bottom + 8 + 'px';
+    menu.classList.add('show');
+}
+document.addEventListener('click',()=>menu.classList.remove('show'));
+
+const addMask = document.getElementById('addMask');
+function openAdd(){
+    document.getElementById('addName').value = '';
+    document.getElementById('addUrl').value = '';
+    addMask.classList.add('show');
+}
+function closeAdd(){ addMask.classList.remove('show') }
+function saveAdd(){
+    const name = document.getElementById('addName').value.trim();
+    let url = document.getElementById('addUrl').value.trim();
+    if(!name || !url) return alert('请填写完整');
+    url = fixUrl(url);
+
+    const newItem = {name, url, hide:false, isSys:false};
+    userBookmarks.push(newItem);
+    localStorage.setItem('userBookmarks', JSON.stringify(userBookmarks));
+    list = [...SYS_BOOKMARKS, ...userBookmarks];
+    render();
+    closeAdd();
+}
+
+const editMask = document.getElementById('editMask');
+function openEdit(){
+    menu.classList.remove('show');
+    const item = list[currentIndex];
+    if(item.isSys){
+        alert('系统默认书签不可编辑');
+        return;
+    }
+    document.getElementById('editName').value = item.name;
+    document.getElementById('editUrl').value = item.url;
+    editMask.classList.add('show');
+}
+function closeEdit(){ editMask.classList.remove('show') }
+function saveEdit(){
+    const name = document.getElementById('editName').value.trim();
+    let url = document.getElementById('editUrl').value.trim();
+    if(!name || !url) return alert('请填写完整');
+    url = fixUrl(url);
+
+    const item = list[currentIndex];
+    if(item.isSys) return;
+
+    userBookmarks = userBookmarks.map(b => 
+        b === item ? {name, url, hide:false, isSys:false} : b
+    );
+    localStorage.setItem('userBookmarks', JSON.stringify(userBookmarks));
+    list = [...SYS_BOOKMARKS, ...userBookmarks];
+    render();
+    closeEdit();
+}
+
+function doDel(){
+    menu.classList.remove('show');
+    const item = list[currentIndex];
+    if(item.isSys){
+        alert('系统默认书签不可删除');
+        return;
+    }
+    if(!confirm('确定删除？')) return;
+
+    userBookmarks = userBookmarks.filter(b => b !== item);
+    localStorage.setItem('userBookmarks', JSON.stringify(userBookmarks));
+    list = [...SYS_BOOKMARKS, ...userBookmarks];
+    render();
+}
+
+render();
+</script>
 </body>
 </html>
