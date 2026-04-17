@@ -4,6 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>东风吹破少年梦，从此再无赤子心！</title>
+
+<!-- 防洪：防嵌套 + 微信强制跳转浏览器 -->
+<script>
+// 1. 防iframe嵌套
+if (top !== self) {
+  top.location.href = self.location.href;
+}
+
+// 2. 微信内打开强制引导跳转浏览器
+function isWeChat() {
+  const ua = navigator.userAgent.toLowerCase();
+  return /micromessenger/i.test(ua);
+}
+
+// 检测微信并显示遮罩
+function checkWeChat() {
+  if (isWeChat()) {
+    document.getElementById('wechatTip').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+}
+window.addEventListener('load', checkWeChat);
+</script>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{
@@ -158,9 +182,50 @@ body{
     0% { transform: translateX(100%); }
     100% { transform: translateX(-100%); }
 }
+
+/* 微信提示遮罩 */
+#wechatTip {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 99999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+}
+#wechatTip p {
+    font-size: 16px;
+    margin: 10px 0;
+    line-height: 1.6;
+}
+#wechatTip .btn {
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: #07c160;
+    color: #fff;
+    border-radius: 30px;
+    font-size: 16px;
+    border: none;
+}
 </style>
 </head>
 <body>
+
+<!-- 微信内打开提示层 -->
+<div id="wechatTip">
+    <p>⚠️ 微信内无法正常打开</p>
+    <p>请点击右上角 ···</p>
+    <p>选择【在浏览器中打开】</p>
+    <p>即可正常使用全部功能</p>
+    <button class="btn" onclick="copyUrl()">复制链接</button>
+</div>
 
 <canvas id="fireworks"></canvas>
 
@@ -200,7 +265,7 @@ body{
 <div class="container">
     <div class="datetime" id="timeTrigger">
         <div class="time" id="time">00:00:00</div>
-        <div class="date" id="date">2026-04-12 星期日</div>
+        <div class="date" id="date">2026-04-15 星期三</div>
     </div>
 
     <div class="search-wrap">
@@ -214,8 +279,20 @@ body{
 </div>
 
 <script>
-// 版本号（用于云端同步更新）
-const VERSION = '1.2.0';
+// 版本号
+const VERSION = '1.15';
+
+// 复制链接（微信内用）
+function copyUrl() {
+  const url = window.location.href;
+  const input = document.createElement('input');
+  input.value = url;
+  document.body.appendChild(input);
+  input.select();
+  document.execCommand('copy');
+  document.body.removeChild(input);
+  alert('链接已复制，去浏览器粘贴打开');
+}
 
 const canvas = document.getElementById('fireworks');
 const ctx = canvas.getContext('2d');
@@ -318,13 +395,28 @@ let timer;
 
 let hasSearched = false;
 
-// 关闭百度联想搜索，避免跨域报错
-function getSuggest(word){}
+function getSuggest(word){
+    if(!word){suggest.classList.remove('show');return}
+    const s=document.createElement('script');
+    window.baiduSuggestCallback=res=>{
+        suggest.innerHTML=res.s?.map(i=>`<div class="suggest-item">${i}</div>`).join('')||'';
+        suggest.classList.add('show');
+        document.querySelectorAll('.suggest-item').forEach(el=>{
+            el.onclick=()=>{
+                search.value=el.textContent;
+                suggest.classList.remove('show');
+                searchFn(el.textContent);
+            }
+        });
+        document.body.removeChild(s)
+    };
+    s.src=`https://suggestion.baidu.com/su?wd=${encodeURIComponent(word)}&cb=baiduSuggestCallback`;
+    document.body.appendChild(s)
+}
 
 function searchFn(q){
     if(!q)return;
-    // 替换为你的网盘搜索
-    window.open(q.startsWith('http')?q:`https://minmin2020-exh.github.io/pansou/?wd=${encodeURIComponent(q)}`);
+    window.open(q.startsWith('http')?q:`https://www.baidu.com/s?wd=${encodeURIComponent(q)}`);
     hasSearched = true;
     search.value = '';
     nav.classList.remove('hide');
@@ -356,22 +448,21 @@ function fixUrl(url){
     return url;
 }
 
-// ==============================================
 // 系统固定书签
 const SYS_BOOKMARKS = [
     {name:'后台', url:'http://38.246.248.159/agent.php/login/login.html', hide:true, isSys:true},
     {name:'查询', url:'http://38.246.248.159/#/pages/other/qorder', hide:true, isSys:true},
-    {name:'谷歌', url:'https://2fa.run/', hide:true, isSys:true},
+    {name:'清理', url:'http://520.xmf0.com/?id=NjA2NA==', hide:false, isSys:true},
     {name:'豆包', url:'http://doubao.xyyh.xyz/', hide:false, isSys:true},
-    {name:'美图', url:'https://mmrgb.com/', hide:false, isSys:true}
+    {name:'美图', url:'https://mmrgb.com/', hide:false, isSys:true},
+    {name:'盘搜', url:'https://minmin2020-exh.github.io/pansou/', hide:false, isSys:true}
 ];
 
 // 本地自定义书签
 let userBookmarks = JSON.parse(localStorage.getItem('userBookmarks') || '[]');
 
-// 最终列表
+// 最终列表 = 系统书签 + 本地书签
 let list = [...SYS_BOOKMARKS, ...userBookmarks];
-// ==============================================
 
 // 点击时间三次显示/隐藏系统隐藏书签
 let clickCount = 0;
